@@ -23,6 +23,7 @@ section .data
     format_str db "%s", 0
 
 section .bss
+    choice resd 1
 
 
 section .text
