@@ -18,6 +18,16 @@ section .data
     invalid db "Invalid choice. Please try again.", 10, 0
 
     exit db "Exiting the System. Goodbye!", 10, 0
-    
+
 section .bss
+
+
 section .text
+    global _main
+    extern _printf, _scanf
+
+
+_main:
+    push header
+    call _printf
+    add esp, 4
