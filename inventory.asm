@@ -14,13 +14,17 @@ section .data
         "==================================================",10, 0
 
     choice_msg db "Enter choice: ", 0
-
     invalid_msg db "Invalid choice. Please try again.", 10, 0
-
     exit_msg db "Exiting the System. Goodbye!", 10, 0
 
     format_int db "%d", 0
     format_str db "%s", 0
+
+    ;add product
+
+    add_product_name db "Enter the product's name: ", 0
+    add_quantity db "How many stocks of the product: ", 0
+    added_successfully db "Product has been added successfully"
 
 section .bss
     choice resd 1
