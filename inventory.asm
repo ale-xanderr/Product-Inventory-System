@@ -15,6 +15,9 @@ section .data
 
     choice db "Enter choice: ", 0
 
+    invalid db "Invalid choice. Please try again.", 10, 0
+
+    exit db "Exiting the System. Goodbye!", 10, 0
     
 section .bss
 section .text
