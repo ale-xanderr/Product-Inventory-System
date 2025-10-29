@@ -52,5 +52,10 @@ menu_loop:
     mov eax, [choice]
 
     ; invalid choice
+    push invalid
+    call _printf
+    add esp, 4
+
+    jmp menu_loop
 
 
