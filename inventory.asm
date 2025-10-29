@@ -12,7 +12,9 @@ section .data
         "[7] Display Products Sorted by Quantity", 10, \
         "[8] Exit", 10, \
         "================================",10, 0
-        
-    choice db 
+
+    choice db "Enter choice: ", 0
+
+    
 section .bss
 section .text
