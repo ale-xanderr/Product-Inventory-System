@@ -36,3 +36,21 @@ _main:
     push header
     call _printf
     add esp, 4
+
+menu_loop:
+    ; print menu
+    push menu
+    call _printf
+    add esp, 4
+
+    ; read choice
+    push choice
+    push format_int
+    call _scanf
+    add esp, 8
+
+    mov eax, [choice]
+
+    ; invalid choice
+
+
