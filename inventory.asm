@@ -24,10 +24,14 @@ section .data
 
     add_product_name db "Enter the product's name: ", 0
     add_quantity db "How many stocks of the product: ", 0
-    added_successfully db "Product has been added successfully"
-
+    added_successfully db "Product has been added successfully", 10, 0
+    list_full db "Product list is full (20)", 10, 0
+ 
 section .bss
     choice resd 1
+
+    product_limit equ 20
+    product 
 
 section .text
     global _main
