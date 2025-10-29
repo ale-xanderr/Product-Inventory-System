@@ -32,6 +32,7 @@ section .text
 
 
 _main:
+    ; print header
     push header
     call _printf
     add esp, 4
