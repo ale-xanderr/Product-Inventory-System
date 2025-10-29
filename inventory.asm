@@ -120,5 +120,3 @@ exit_program:
     call _printf
     add esp, 4
     ret
-
-; example na delete
