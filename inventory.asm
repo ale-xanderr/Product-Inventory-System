@@ -19,6 +19,9 @@ section .data
 
     exit db "Exiting the System. Goodbye!", 10, 0
 
+    format_int db "%d", 0
+    format_str db "%s", 0
+
 section .bss
 
 
