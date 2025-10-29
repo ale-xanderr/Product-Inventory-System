@@ -1,7 +1,7 @@
 section .data
-    header db "================================", 10, \
-            "   PRODUCT INVENTORY SYSTEM", 10, \
-            "================================", 10, 0
+    header db "==================================================", 10, \
+            "            PRODUCT INVENTORY SYSTEM", 10, \
+            "==================================================", 10, 0
 
     menu db "[1] Add Product", 10, \
         "[2] Delete Product by Name", 10, \
@@ -11,11 +11,11 @@ section .data
         "[6] Display All Products", 10, \
         "[7] Display Products Sorted by Quantity", 10, \
         "[8] Exit", 10, \
-        "================================",10, 0
+        "==================================================",10, 0
 
     choice_msg db "Enter choice: ", 0
 
-    invalid _msg db "Invalid choice. Please try again.", 10, 0
+    invalid_msg db "Invalid choice. Please try again.", 10, 0
 
     exit_msg db "Exiting the System. Goodbye!", 10, 0
 
@@ -87,7 +87,7 @@ menu_loop:
     je exit_program
 
     ; invalid choice
-    push invalid
+    push invalid_msg
     call _printf
     add esp, 4
 
@@ -116,7 +116,7 @@ display_sorted:
     jmp menu_loop
 
 exit_program:
-    push exit 
+    push exit_msg
     call _printf
     add esp, 4
     ret
