@@ -67,20 +67,14 @@ The project employs **modular programming**, with separate procedures for each m
 Main Menu
    ↓
 User chooses option
-   ├── 1 → add_product
-   ├── 2 → delete_menu
-       ├── 1 → delete_by_name
-       ├── 2 → delete_zero_stock
-       └── 0 → back_to_main_menu
-   ├── 3 → search_menu
-       ├── 1 → search_by_name
-       ├── 2 → search_low_stock
-       └── 0 → back_to_main_menu
-   ├── 4 → display_menu
-       ├── 1 → display_all
-       ├── 2 → display_sorted
-       └── 0 → back_to_main_menu
-   └── 0 → exit_program
+   ├── 1 → Add Product
+   ├── 2 → Delete Product by Name
+   ├── 3 → Delete All Products with Zero Stock
+   ├── 4 → Search Product by Name
+   ├── 5 → Search Low-Stock Product
+   ├── 6 → Display All Products
+   ├── 7 → Display Products Sorted by Quantity
+   └── 8 → Exit
 ```
 ## 💻 How to Run (Windows)
 
