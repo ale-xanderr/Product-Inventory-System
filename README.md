@@ -60,3 +60,83 @@ The project employs **modular programming**, with separate procedures for each m
 | `display_sorted` | Displays products sorted by quantity |
 | `input_validation` | Ensures valid input for quantity and names |  
 ---
+
+### 🧭 Menu Navigation
+
+```
+Main Menu
+   ↓
+User chooses option
+   ├── 1 → add_product
+   ├── 2 → delete_menu
+       ├── 1 → delete_by_name
+       ├── 2 → delete_zero_stock
+       └── 0 → back_to_main_menu
+   ├── 3 → search_menu
+       ├── 1 → search_by_name
+       ├── 2 → search_low_stock
+       └── 0 → back_to_main_menu
+   ├── 4 → display_menu
+       ├── 1 → display_all
+       ├── 2 → display_sorted
+       └── 0 → back_to_main_menu
+   └── 0 → exit_program
+```
+## 💻 How to Run (Windows)
+
+```bash
+nasm -f win32 inventory.asm
+gcc -o inventory inventory.obj
+inventory.exe
+```
+---
+
+## 🚀 How to Contribute
+
+To keep the repository stable and organized, please follow this workflow:
+
+### 1. Fork the Repository
+Click **Fork** at the top-right of this repo to create your copy under your GitHub account.
+
+### 2. Clone Your Fork
+```bash
+git clone https://github.com/<your-username>/Product-Inventory-System.git
+```
+Replace `<your-username>` with your GitHub username.
+
+### 3. Create a New Branch
+```bash
+git checkout -b feature-name
+```
+
+### 4. Make Your Changes
+Implement your code, documentation, or bug fixes.
+```bash
+git add .
+git commit -m "Add search by product name feature"
+```
+
+### 5. Push to Your Fork
+```bash
+git push origin feature-name
+```
+
+### 6. Open a Pull Request (PR)
+1. Go to your fork on GitHub  
+2. Click **New Pull Request**  
+3. Set the base repo to the main project (e.g., `username/Product-Inventory-System`)  
+4. Add a clear description of your changes
+
+---
+
+## 🔑 Notes
+- **Do not push directly to main**
+- Keep your fork updated:
+```bash
+git remote add upstream https://github.com/ale-xanderr/Product-Inventory-System.git
+git checkout main
+git pull upstream main
+git push origin main
+```
+
+---
