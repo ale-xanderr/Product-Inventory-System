@@ -22,16 +22,21 @@ section .data
 
     ;add product
 
-    add_product_name db "Enter the product's name: ", 0
-    add_quantity db "How many stocks of the product: ", 0
-    added_successfully db "Product has been added successfully", 10, 0
-    list_full db "Product list is full (20)", 10, 0
+    add_product_msg db "Enter the product's name: ", 0
+    add_quantity_msg db "How many stocks of the product: ", 0
+    add_successfully_msg db "Product has been added successfully", 10, 0
+    add_list_full_msg db "Product list is full (20)", 10, 0
  
 section .bss
     choice resd 1
 
-    product_limit equ 20
-    product 
+    product_limit equ 20          ; max 20 products in the product list
+    product_length equ 21         ; max 20 chars + null terminator
+    product_count resd 1          ; number of products stored
+
+    temp_name resb product_length
+    temp_quantity resd 1
+    
 
 section .text
     global _main
@@ -102,6 +107,22 @@ menu_loop:
     jmp menu_loop
 
 add_product:
+    ; check first if the list is full
+    mov eax, [product_count]
+    cmp eax, 10
+    jge add_list_full
+
+    ; ask for the product's name
+    push add_name_msg
+    call _printf
+    add esp, 4
+
+    push temp_name
+    push format_str
+    call _scanf
+    add esp, 8
+
+
 
     jmp menu_loop
 
