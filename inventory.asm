@@ -125,11 +125,12 @@ menu_loop:
 
     jmp menu_loop
 
+; add product
 add_product:
     ; check first if the list is full
     mov eax, [product_count]
     cmp eax, product_limit
-    jge .list_full
+    jge add_full_list
 
     ; ask for the product's name
     push add_product_msg
@@ -176,23 +177,22 @@ add_product:
     jmp menu_loop
 
 
-get_product:
-    mov edi, quantities
-    mov eax, ebx
-    imul eax, product_length
-    add edi, eax
-    ret
+add_duplicate:
+    push add_duplicate_msg
+    call _printf
+    add esp, 4
+    jmp menu_loop
 
-get_quantity:
-    mov edi, quantities
-    mov eax, ebx
-    imul eax, 4
-    add edi, eax
-    ret
+add_full_list:
+    push add_list_full_msg
+    call _printf
+    add esp, 4
+    jmp menu_loop
 
-
-
-
+add_invalid_quantity:
+    push add_invalid_quantity_msg
+    call _printf
+    add esp, 4
     jmp menu_loop
 
 delete_by_name:
@@ -208,6 +208,31 @@ search_low_stock:
     jmp menu_loop
 
 display_all:
+    push display_header
+    call _printf
+    add esp, 4
+
+    mov ecx, [product_count]
+    test ecx, ecx
+    jz display_empty
+    
+    mov ebx, 0
+
+display_loop:
+    lea esi, [product_names + ebx * product_length]
+    lea edi, [quantities + ebx *4]
+    mov eax, [edi]
+
+    push eax
+    push esi
+    push display_products
+    call _printf
+    add esp, 12
+
+    inc ebx
+    cmp ebx, ecx
+    jl display_loop
+
     jmp menu_loop
 
 display_sorted:
