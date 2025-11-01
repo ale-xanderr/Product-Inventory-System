@@ -24,8 +24,10 @@ section .data
 
     add_product_msg db "Enter the product's name: ", 0
     add_quantity_msg db "How many stocks of the product: ", 0
-    add_successfully_msg db "Product has been added successfully", 10, 0
+    add_success_msg db "Product has been added successfully", 10, 0
     add_list_full_msg db "Product list is full (20)", 10, 0
+    add_duplicate_msg db "Product already exists in the list!", 10, 0
+    add_invalid_quantity_msg db "Quantity must be within 1-99!", 10, 0
  
 section .bss
     choice resd 1
@@ -109,7 +111,7 @@ menu_loop:
 add_product:
     ; check first if the list is full
     mov eax, [product_count]
-    cmp eax, 10
+    cmp eax, product_limit
     jge add_list_full_msg
 
     ; ask for the product's name
@@ -131,6 +133,12 @@ add_product:
     push format_int
     call _scanf
     add esp, 8
+
+    ; store the products in array
+    mov ebx, [product_count]
+    mov edi, product_length
+    imul edx, product_length
+
 
 
 
