@@ -69,7 +69,7 @@ menu_loop:
 
     ; add product 
     cmp eax, 1
-    je add_product
+    je add_product_msg
 
     ; delete product by name
     cmp eax, 2
@@ -110,15 +110,25 @@ add_product:
     ; check first if the list is full
     mov eax, [product_count]
     cmp eax, 10
-    jge add_list_full
+    jge add_list_full_msg
 
     ; ask for the product's name
-    push add_name_msg
+    push add_product_msg
     call _printf
     add esp, 4
 
     push temp_name
     push format_str
+    call _scanf
+    add esp, 8
+
+    ; ask for the product's quantity
+    push add_quantity_msg
+    call _printf
+    add esp, 4
+
+    push temp_quantity
+    push format_int
     call _scanf
     add esp, 8
 
