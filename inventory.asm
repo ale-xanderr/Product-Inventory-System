@@ -11,7 +11,7 @@ section .data
         "[6] Display All Products", 10, \
         "[7] Display Products Sorted by Quantity", 10, \
         "[8] Exit", 10, \
-        "==================================================",10, 0
+        "==================================================", 10, 0
 
     choice_msg db "Enter choice: ", 0
     invalid_msg db "Invalid choice. Please try again.", 10, 0
@@ -20,14 +20,21 @@ section .data
     format_int db "%d", 0
     format_str db "%s", 0
 
+    newline db 10, 0
+
     ;add product
 
-    add_product_msg db "Enter the product's name: ", 0
-    add_quantity_msg db "How many stocks of the product: ", 0
+    add_product_msg db "Enter the product's name (20): ", 0
+    add_quantity_msg db "How many stocks of the product (1-99): ", 0
     add_success_msg db "Product has been added successfully", 10, 0
     add_list_full_msg db "Product list is full (20)", 10, 0
     add_duplicate_msg db "Product already exists in the list!", 10, 0
-    add_invalid_quantity_msg db "Quantity must be within 1-99!", 10, 0
+    add_invalid_quantity_msg db "Quantity must be 1-99!", 10, 0
+
+    ; display product
+    display_header db "===== CURRENT INVENTORY =====", 10, 0
+    display_products db "%s" --> "%d", 10, 0
+    display empty db "Inventory is empty.", 10, 0
  
 section .bss
     choice resd 1
@@ -36,7 +43,10 @@ section .bss
     product_length equ 21         ; max 20 chars + null terminator
     product_count resd 1          ; number of products stored
 
-    temp_name resb product_length
+    product_names resb product_limit * product_length           ; array for strings
+    quantities resd product_limit                               ; array for quantities
+    
+    temp_name resb product_length                   
     temp_quantity resd 1
     
 
@@ -45,12 +55,19 @@ section .text
     extern _printf, _scanf
 
 _main:
+    mov dword [product_count], 0        ; initialize the count
+
+    ; ; print header
+    ; push header
+    ; call _printf
+    ; add esp, 4
+
+menu_loop:
     ; print header
     push header
     call _printf
     add esp, 4
 
-menu_loop:
     ; print menu
     push menu
     call _printf
@@ -112,7 +129,7 @@ add_product:
     ; check first if the list is full
     mov eax, [product_count]
     cmp eax, product_limit
-    jge add_list_full_msg
+    jge .list_full
 
     ; ask for the product's name
     push add_product_msg
@@ -123,6 +140,11 @@ add_product:
     push format_str
     call _scanf
     add esp, 8
+
+    ; check if the product is a duplicate
+    call check_duplicate
+    test eax, eax
+    jnz .duplicate
 
     ; ask for the product's quantity
     push add_quantity_msg
@@ -136,8 +158,37 @@ add_product:
 
     ; store the products in array
     mov ebx, [product_count]
-    mov edi, product_length
-    imul edx, product_length
+    
+    lea edi, [product_names + ebx * product_length]
+    mov esi, temp_name
+    call string_copy
+
+    lea edi, [quantities + ebx *4]
+    mov eax, [temp_quantity]
+    mov [edi], eax
+
+    inc dword [product_count]
+
+    push add_success_msg
+    call _printf
+    add esp, 4
+    
+    jmp menu_loop
+
+
+get_product:
+    mov edi, quantities
+    mov eax, ebx
+    imul eax, product_length
+    add edi, eax
+    ret
+
+get_quantity:
+    mov edi, quantities
+    mov eax, ebx
+    imul eax, 4
+    add edi, eax
+    ret
 
 
 
