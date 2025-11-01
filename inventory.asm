@@ -11,7 +11,7 @@ section .data
         "[6] Display All Products", 10, \
         "[7] Display Products Sorted by Quantity", 10, \
         "[8] Exit", 10, \
-        "==================================================",10, 0
+        "==================================================", 10, 0
 
     choice_msg db "Enter choice: ", 0
     invalid_msg db "Invalid choice. Please try again.", 10, 0
@@ -20,12 +20,21 @@ section .data
     format_int db "%d", 0
     format_str db "%s", 0
 
+    newline db 10, 0
+
     ;add product
 
-    add_product_msg db "Enter the product's name: ", 0
-    add_quantity_msg db "How many stocks of the product: ", 0
-    add_successfully_msg db "Product has been added successfully", 10, 0
+    add_product_msg db "Enter the product's name (20): ", 0
+    add_quantity_msg db "How many stocks of the product (1-99): ", 0
+    add_success_msg db "Product has been added successfully", 10, 0
     add_list_full_msg db "Product list is full (20)", 10, 0
+    add_duplicate_msg db "Product already exists in the list!", 10, 0
+    add_invalid_quantity_msg db "Quantity must be 1-99!", 10, 0
+
+    ; display product
+    display_header db "===== CURRENT INVENTORY =====", 10, 0
+    display_products db "%s" --> "%d", 10, 0
+    display empty db "Inventory is empty.", 10, 0
  
 section .bss
     choice resd 1
@@ -34,7 +43,10 @@ section .bss
     product_length equ 21         ; max 20 chars + null terminator
     product_count resd 1          ; number of products stored
 
-    temp_name resb product_length
+    product_names resb product_limit * product_length           ; array for strings
+    quantities resd product_limit                               ; array for quantities
+    
+    temp_name resb product_length                   
     temp_quantity resd 1
     
 
@@ -43,12 +55,19 @@ section .text
     extern _printf, _scanf
 
 _main:
+    mov dword [product_count], 0        ; initialize the count
+
+    ; ; print header
+    ; push header
+    ; call _printf
+    ; add esp, 4
+
+menu_loop:
     ; print header
     push header
     call _printf
     add esp, 4
 
-menu_loop:
     ; print menu
     push menu
     call _printf
@@ -69,7 +88,7 @@ menu_loop:
 
     ; add product 
     cmp eax, 1
-    je add_product
+    je add_product_msg
 
     ; delete product by name
     cmp eax, 2
@@ -106,14 +125,15 @@ menu_loop:
 
     jmp menu_loop
 
+; add product
 add_product:
     ; check first if the list is full
     mov eax, [product_count]
-    cmp eax, 10
-    jge add_list_full
+    cmp eax, product_limit
+    jge add_full_list
 
     ; ask for the product's name
-    push add_name_msg
+    push add_product_msg
     call _printf
     add esp, 4
 
@@ -122,8 +142,57 @@ add_product:
     call _scanf
     add esp, 8
 
+    ; check if the product is a duplicate
+    call check_duplicate
+    test eax, eax
+    jnz .duplicate
+
+    ; ask for the product's quantity
+    push add_quantity_msg
+    call _printf
+    add esp, 4
+
+    push temp_quantity
+    push format_int
+    call _scanf
+    add esp, 8
+
+    ; store the products in array
+    mov ebx, [product_count]
+    
+    lea edi, [product_names + ebx * product_length]
+    mov esi, temp_name
+    call string_copy
+
+    lea edi, [quantities + ebx *4]
+    mov eax, [temp_quantity]
+    mov [edi], eax
+
+    inc dword [product_count]
+
+    push add_success_msg
+    call _printf
+    add esp, 4
+    
+    jmp menu_loop
 
 
+add_duplicate:
+    push add_duplicate_msg
+    call _printf
+    add esp, 4
+    jmp menu_loop
+
+add_full_list:
+    push add_list_full_msg
+    call _printf
+    add esp, 4
+    jmp menu_loop
+
+add_invalid_quantity:
+    push add_invalid_quantity_msg
+    call _printf
+    add esp, 4
     jmp menu_loop
 
 delete_by_name:
@@ -139,6 +208,31 @@ search_low_stock:
     jmp menu_loop
 
 display_all:
+    push display_header
+    call _printf
+    add esp, 4
+
+    mov ecx, [product_count]
+    test ecx, ecx
+    jz display_empty
+    
+    mov ebx, 0
+
+display_loop:
+    lea esi, [product_names + ebx * product_length]
+    lea edi, [quantities + ebx *4]
+    mov eax, [edi]
+
+    push eax
+    push esi
+    push display_products
+    call _printf
+    add esp, 12
+
+    inc ebx
+    cmp ebx, ecx
+    jl display_loop
+
     jmp menu_loop
 
 display_sorted:
