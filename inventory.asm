@@ -31,6 +31,12 @@ section .data
     add_duplicate_msg db "Product already exists in the list!", 10, 0
     add_invalid_quantity_msg db "Quantity must be 1-99!", 10, 0
 
+    ; delete product
+    delete_product_msg db "Enter the product name you want to delete: ", 0
+    delete_success_msg db "The product has been deleted successfully.", 10, 0
+    delete_not_found_msg db "The product is not in the inventory list.", 10, 0
+
+
     ; display product
     display_header db "===== CURRENT INVENTORY =====", 10, 0
     display_products db "%s" --> "%d", 10, 0
@@ -41,8 +47,8 @@ section .bss
 
     product_limit equ 20          ; max 20 products in the product list
     product_length equ 21         ; max 20 chars + null terminator
+    
     product_count resd 1          ; number of products stored
-
     product_names resb product_limit * product_length           ; array for strings
     quantities resd product_limit                               ; array for quantities
     
@@ -56,11 +62,6 @@ section .text
 
 _main:
     mov dword [product_count], 0        ; initialize the count
-
-    ; ; print header
-    ; push header
-    ; call _printf
-    ; add esp, 4
 
 menu_loop:
     ; print header
@@ -125,12 +126,14 @@ menu_loop:
 
     jmp menu_loop
 
+;==========================================================
 ; add product
+;==========================================================
 add_product:
     ; check first if the list is full
     mov eax, [product_count]
     cmp eax, product_limit
-    jge add_full_list
+    jge .full
 
     ; ask for the product's name
     push add_product_msg
@@ -157,14 +160,20 @@ add_product:
     call _scanf
     add esp, 8
 
+    mov eax, [temp_quantity]
+    cmp eax, 1
+    jl .invalid_quantity
+    cmp eax, 99
+    jg . invalid_quantity
+
     ; store the products in array
     mov ebx, [product_count]
     
     lea edi, [product_names + ebx * product_length]
     mov esi, temp_name
-    call string_copy
+    call strcpy_manual
 
-    lea edi, [quantities + ebx *4]
+    lea edi, [quantities + ebx * 4]
     mov eax, [temp_quantity]
     mov [edi], eax
 
@@ -176,51 +185,113 @@ add_product:
     
     jmp menu_loop
 
-
-add_duplicate:
-    push add_duplicate_msg
-    call _printf
-    add esp, 4
-    jmp menu_loop
-
-add_full_list:
+.full:
     push add_list_full_msg
     call _printf
     add esp, 4
     jmp menu_loop
 
-add_invalid_quantity:
+.duplicate:
+    push add_duplicate_msg
+    call _printf
+    add esp, 4
+    jmp menu_loop
+
+.invalid_quantity:
     push add_invalid_quantity_msg
     call _printf
     add esp, 4
     jmp menu_loop
 
+;==========================================================
+; delete product by name
+;==========================================================
 delete_by_name:
+    push delete_product_msg
+    call _printf
+    add esp, 4
+
+    push temp_name
+    push format_str
+    call _scanf
+    add esp, 8
+
+    call product_index
+    cmp ebx, -1
+    je .delete_invalid
+
+    mov esi, ebx
+    inc esi
+    mov edi, ebx
+
+.delete_loop:
+    cmp esi, [product_count]
+    jge .delete_done
+
+    lea eax, [product_names + edi * product_length]
+    push eax
+    lea eax, [product_names + esi * product_length]
+    push eax
+    call strcpy_manual
+    add esp, 8
+
+    lea eax, [quantities + edi * 4]
+    mov edx, [eax + 4]
+    mov [eax], edx
+
+    inc edi
+    inc esi
+    jmp .delete_loop
+
+.delete_done:
+    dec dword [product_count]
+
+    push delete_success_msg
+    call _printf 
+    add esp, 4
     jmp menu_loop
 
+.delete_invalid:
+    push delete_not_found_msg
+    call _printf
+    add esp, 4
+    jmp menu_loop
+
+;==========================================================
+; delete product/s with zero stock
+;==========================================================
 delete_zero_stock:
     jmp menu_loop
 
+;==========================================================
+; search product by name
+;==========================================================
 search_by_name:
     jmp menu_loop
 
+;==========================================================
+; search product that has low stock
+;==========================================================
 search_low_stock:
     jmp menu_loop
 
+;==========================================================
+; display all products
+;==========================================================
 display_all:
     push display_header
     call _printf
     add esp, 4
 
     mov ecx, [product_count]
-    test ecx, ecx
-    jz display_empty
+    cmp ecx, 0
+    jz .display_empty
     
     mov ebx, 0
 
-display_loop:
+.display_loop:
     lea esi, [product_names + ebx * product_length]
-    lea edi, [quantities + ebx *4]
+    lea edi, [quantities + ebx * 4]
     mov eax, [edi]
 
     push eax
@@ -231,46 +302,93 @@ display_loop:
 
     inc ebx
     cmp ebx, ecx
-    jl display_loop
+    jl .display_loop
 
     jmp menu_loop
 
-display_empty:
+.empty:
     push display_empty
     call _printf
     add esp, 4
-    jl display_loop
 
     jmp menu_loop
 
+;==========================================================
+; display sorted products by quantity
+;==========================================================
 display_sorted:
     jmp menu_loop
 
-check_duplicate:
+;==========================================================
+; helpers
+;==========================================================
+
+strcpy_manual:
+    push esi
+    push edi
+    mov esi, [esp + 12]
+    mov edi, [esp + 8]
+    cld
+
+.copy:
+    lodsb 
+    stosb
+    cmp al, 0
+    jne .copy
+    pop edi
+    pop esi
+    ret 
+
+product_index:
     mov ecx, [product_count]
-    test ecx, ecx
-    jz check_not_found
+    cmp ecx, 0
+    je .not_found
 
     mov ebx, 0
 
-check_loop:
-    lea esi, [product_count + ebx * product_length]
-    mov edi, temp_name
-    push ecx
-    push ebx
+.loop:
+    lea  esi, [product_names + ebx * product_length]
+    mov  edi, temp_name
+    cld
+    mov  ecx, product_length
+    repe cmpsb
+    je   .found
 
+    inc  ebx
+    cmp  ebx, [product_count]
+    jl   .loop
+
+.not_found:
+    mov ebx, -1
+    ret
+
+.found:
+    ret
+
+check_duplicate:
+    mov ecx, [product_count]
+    cmp ecx, 0
+    jz .check
+
+    mov ebx, 0
+
+.loop:
+    lea esi, [product_names + ebx * product_length]
+    mov edi, temp_name
     cld
     mov ecx, product_length
     repe cmpsb 
-    pop ebx
-    pop ecx
-    je check_found 
+    je .dupes
 
-check_not_found:
+    inc ebx
+    cmp ebx, [product_count]
+    jl .loop 
+
+.check:
     mov eax, 0
     ret
 
-check_found:
+.dupes:
     mov eax, 1
     ret
 
