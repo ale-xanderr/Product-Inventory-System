@@ -89,7 +89,7 @@ menu_loop:
 
     ; add product 
     cmp eax, 1
-    je add_product_msg
+    je add_product
 
     ; delete product by name
     cmp eax, 2
@@ -147,8 +147,8 @@ add_product:
 
     ; check if the product is a duplicate
     call check_duplicate
-    test eax, eax
-    jnz .duplicate
+    cmp eax, 0
+    jne .duplicate
 
     ; ask for the product's quantity
     push add_quantity_msg
@@ -164,12 +164,15 @@ add_product:
     cmp eax, 1
     jl .invalid_quantity
     cmp eax, 99
-    jg . invalid_quantity
+    jg .invalid_quantity
 
     ; store the products in array
-    mov ebx, [product_count]
-    
-    lea edi, [product_names + ebx * product_length]
+    mov ebx, [product_count]    
+    mov edi, product_names
+    mov eax, ebx
+    imul eax, product_length
+    add edi, eax
+
     mov esi, temp_name
     call strcpy_manual
 
@@ -228,10 +231,16 @@ delete_by_name:
     cmp esi, [product_count]
     jge .delete_done
 
-    lea eax, [product_names + edi * product_length]
+    mov eax, edi
+    imul eax, product_length
+    add eax, product_names
     push eax
-    lea eax, [product_names + esi * product_length]
+
+    mov eax, esi
+    imul eax, product_length
+    add eax, product_names
     push eax
+
     call strcpy_manual
     add esp, 8
 
@@ -285,12 +294,17 @@ display_all:
 
     mov ecx, [product_count]
     cmp ecx, 0
-    jz .display_empty
+    jz .empty
     
     mov ebx, 0
 
 .display_loop:
-    lea esi, [product_names + ebx * product_length]
+    mov edi, product_names
+    mov eax, ebx
+    imul eax, product_length
+    add edi, eax
+    mov esi, edi
+
     lea edi, [quantities + ebx * 4]
     mov eax, [edi]
 
@@ -303,14 +317,12 @@ display_all:
     inc ebx
     cmp ebx, ecx
     jl .display_loop
-
     jmp menu_loop
 
 .empty:
     push display_empty
     call _printf
     add esp, 4
-
     jmp menu_loop
 
 ;==========================================================
@@ -324,10 +336,6 @@ display_sorted:
 ;==========================================================
 
 strcpy_manual:
-    push esi
-    push edi
-    mov esi, [esp + 12]
-    mov edi, [esp + 8]
     cld
 
 .copy:
@@ -335,8 +343,6 @@ strcpy_manual:
     stosb
     cmp al, 0
     jne .copy
-    pop edi
-    pop esi
     ret 
 
 product_index:
@@ -347,16 +353,22 @@ product_index:
     mov ebx, 0
 
 .loop:
-    lea  esi, [product_names + ebx * product_length]
+    mov edi, product_names
+    mov eax, ebx
+    imul eax, product_count
+    add edi, eax
+
+    mov esi, edi
     mov  edi, temp_name
+
     cld
     mov  ecx, product_length
     repe cmpsb
-    je   .found
+    je .found
 
     inc  ebx
     cmp  ebx, [product_count]
-    jl   .loop
+    jl .loop
 
 .not_found:
     mov ebx, -1
@@ -368,13 +380,19 @@ product_index:
 check_duplicate:
     mov ecx, [product_count]
     cmp ecx, 0
-    jz .check
+    jz .not_dupes
 
     mov ebx, 0
 
 .loop:
-    lea esi, [product_names + ebx * product_length]
+    mov edi, product_names
+    mov eax, ebx
+    imul eax, product_length
+    add edi, eax
+
+    mov esi, edi
     mov edi, temp_name
+
     cld
     mov ecx, product_length
     repe cmpsb 
@@ -384,7 +402,7 @@ check_duplicate:
     cmp ebx, [product_count]
     jl .loop 
 
-.check:
+.not_dupes:
     mov eax, 0
     ret
 
