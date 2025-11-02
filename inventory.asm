@@ -34,7 +34,7 @@ section .data
     ; display product
     display_header db "===== CURRENT INVENTORY =====", 10, 0
     display_products db "%s" --> "%d", 10, 0
-    display empty db "Inventory is empty.", 10, 0
+    display_empty db "Inventory is empty.", 10, 0
  
 section .bss
     choice resd 1
@@ -235,8 +235,44 @@ display_loop:
 
     jmp menu_loop
 
+display_empty:
+    push display_empty
+    call _printf
+    add esp, 4
+    jl display_loop
+
+    jmp menu_loop
+
 display_sorted:
     jmp menu_loop
+
+check_duplicate:
+    mov ecx, [product_count]
+    test ecx, ecx
+    jz check_not_found
+
+    mov ebx, 0
+
+check_loop:
+    lea esi, [product_count + ebx * product_length]
+    mov edi, temp_name
+    push ecx
+    push ebx
+
+    cld
+    mov ecx, product_length
+    repe cmpsb 
+    pop ebx
+    pop ecx
+    je check_found 
+
+check_not_found:
+    mov eax, 0
+    ret
+
+check_found:
+    mov eax, 1
+    ret
 
 exit_program:
     push exit_msg
