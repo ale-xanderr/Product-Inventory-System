@@ -39,7 +39,7 @@ section .data
 
     ; display product
     display_header db "===== CURRENT INVENTORY =====", 10, 0
-    display_products db "%s" --> "%d", 10, 0
+    display_products db "%s -> %d", 10, 0
     display_empty db "Inventory is empty.", 10, 0
  
 section .bss
