@@ -1,91 +1,81 @@
-🧾 Product Inventory System (Assembly Language Project)
-📚 Computer Organization & Architecture — Final Project
-👥 Group Members: - Member 1 — [Aquino, Sean Xander]
+# 🧾 Product Inventory System (Assembly Language Project)
 
-Member 2 — [David, Kenji Nathaniel]
+### 📚 Computer Organization & Architecture — Final Project
 
-Member 3 — [Lanuzo, Jessica Mae]
+**👥 Group Members:**
+- Member 1 — [Aquino, Sean Xander]
+- Member 2 — [David, Kenji Nathaniel]
+- Member 3 — [Lanuzo, Jessica Mae]
+- Member 4 — [Tercero, Michelle]
 
-Member 4 — [Tercero, Michelle]
+---
 
-🧠 Project Overview
-The Product Inventory System is an Assembly language program designed to manage a list of products using a text-based interface.
+## 🧠 Project Overview
 
-Each product record tracks the Name, Quantity, and Price. The system calculates the total asset value per item and the grand total of the inventory.
+The **Product Inventory System** is an Assembly language (NASM) program designed to manage a retail inventory using a text-based interface.
 
-This program demonstrates:
+Unlike simple list managers, this system utilizes **Parallel Arrays** to track the **Name**, **Quantity**, and **Price** of each product. It performs real-time arithmetic to calculate the **Total Asset Value** per item (`Quantity * Price`) and sums up the **Grand Total** value of the entire inventory.
 
-Parallel Array Data Structures (Managing Names, Quantities, and Prices).
+**Key Technical Concepts:**
+- **Parallel Arrays:** Managing separate memory blocks for strings and integers that correspond by index.
+- **Bubble Sort Algorithm:** sorting data in ascending order.
+- **Robust Input Validation:** Handling "Type Errors" (strings vs integers) and "Range Errors".
+- **Buffer Synchronization:** Using custom buffer flushing to ensure clean input streams.
 
-Modular Programming with Submenus.
+---
 
-Bubble Sort Algorithm for organizing data.
+## ⚙️ Features
 
-Robust Input Validation (Type checking, Range checking, and Buffer flushing).
+### ➕ 1. Add Product
+- Allows the user to input:
+  - **Product Name** (Max 20 characters).
+  - **Quantity** (Validated range: 1-99).
+  - **Price** (Validated: Must be a positive integer).
+- **Duplicate Check:** Prevents adding a product if the name already exists in the list.
 
-Formatted Output (Table views).
+### ❌ 2. Delete Menu
+- **Delete by Name:** Removes a specific product. The system shifts all subsequent array elements to the left to close the gap.
+- **Delete All Zero Stock:** automatically iterates through the entire list and removes every product where the `Quantity` is 0.
 
-⚙️ Features
-➕ 1. Add Product
-Add a new product by entering:
+### 🔍 3. Search Menu
+- **Search by Name:** Locates a specific product and displays its Name, Quantity, Price, and Total Value.
+- **Search Low-Stock:** Scans the inventory and displays all products with a **Quantity less than 5**.
 
-Name (Max 20 characters)
+### 📋 4. Display Menu
+- **Display All (Unsorted):** Renders a clean, formatted table of the current inventory.
+- **Display Sorted:** Sorts the inventory by **Quantity (Ascending)** using the **Bubble Sort** algorithm before displaying.
+- **Financial Calculation:**
+  - Computes line-item totals.
+  - Displays the **OVERALL TOTAL** (Grand Total) of the inventory at the footer.
 
-Quantity (1-99)
+### ✏️ 5. Edit Product
+- Allows users to modify an existing record.
+- The user enters the name of the product to find.
+- If found, the user can overwrite the **Name**, **Quantity**, and **Price**.
 
-Price (Integer)
+---
 
-Includes duplicate name detection.
+## 🧩 Program Design
 
-Validates that inputs are numbers where required.
+The project uses a **Modular Architecture**, utilizing labels as subroutines to handle specific logic.
 
-❌ 2. Delete Menu
-Delete by Name: Removes a specific product and shifts the remaining array elements to fill the gap.
+| Module Label | Functionality |
+|:--|:--|
+| `main_menu` | Controls the primary program loop and navigation. |
+| `do_add_product` | Handles input capture, validation, and parallel array storage. |
+| `do_edit_product` | Searches for an index and updates the arrays at that specific location. |
+| `do_display_sorted` | Implements **Bubble Sort** to reorder arrays before printing. |
+| `display_logic_all` | Renders the table and computes the Grand Total loop. |
+| `flush_buffer` | **Critical Helper:** Consumes leftover newline characters from the input stream to prevent "skipped" inputs during error handling. |
 
-Delete Zero Stock: Iterates through the list and automatically deletes all products where Quantity = 0.
+---
 
-🔍 3. Search Menu
-Search by Name: Finds a specific product and displays its details in a table row.
+### 🧭 Menu Navigation Map
 
-Search Low-Stock: Displays all products with a Quantity less than 5.
+The program is structured with a Main Menu and several Sub-menus:
 
-📋 4. Display Menu
-Display All (Unsorted): Shows a formatted table of all products.
-
-Display Sorted: Sorts the inventory by Quantity (Ascending) using Bubble Sort before displaying.
-
-Features:
-
-Calculates Total = Quantity * Price for each row.
-
-Calculates and displays the Grand Total Asset Value of the inventory.
-
-✏️ 5. Edit Product
-Allows the user to modify an existing product.
-
-Validates that the product exists before editing.
-
-Updates Name, Quantity, and Price.
-
-🧩 Program Design
-The project employs modular programming, dividing tasks into specific labels and helper functions:
-
-Module Label	Description
-main_menu	Handles the primary loop and navigation (Options 1-6).
-do_add_product	Captures input, validates it, and stores it in parallel arrays.
-do_edit_product	Locates an index by name and overwrites data at that index.
-submenu_delete	Handles navigation for "Delete by Name" and "Delete Zero Stock".
-submenu_search	Handles navigation for "Search by Name" and "Search Low Stock".
-submenu_display	Handles navigation for "Unsorted" and "Sorted" views.
-display_logic_all	The core loop that renders the formatted table and calculates totals.
-flush_buffer	Critical Helper: Clears the input buffer to prevent skipped inputs during string/int transitions.
-
-🧭 Menu Navigation Map
-The program uses a Nested Menu Structure:
-
-Plaintext
-
-[ Main Menu ]
+```text
+[ MAIN MENU ]
     │
     ├── [1] Add Product
     │
@@ -107,54 +97,3 @@ Plaintext
     ├── [5] Edit Product
     │
     └── [6] Exit
-💻 How to Run (Windows)
-Prerequisites:
-
-NASM (Netwide Assembler)
-
-GCC (MinGW or similar C Compiler for linking)
-
-Commands:
-
-Bash
-
-# 1. Assemble the source code
-nasm -f win32 inventory.asm
-
-# 2. Link using GCC (links with C library for printf/scanf)
-gcc -o inventory inventory.obj
-
-# 3. Run the executable
-inventory.exe
-🚀 How to Contribute
-To keep the repository stable and organized, please follow this workflow:
-
-Fork the Repository: Click Fork at the top-right of this repo.
-
-Clone Your Fork:
-
-Bash
-
-git clone https://github.com/<your-username>/Product-Inventory-System.git
-Create a New Branch:
-
-Bash
-
-git checkout -b feature-name
-Make Your Changes: Implement code or fix bugs.
-
-Bash
-
-git add .
-git commit -m "Added price validation logic"
-Push to Your Fork:
-
-Bash
-
-git push origin feature-name
-Open a Pull Request: Submit your PR to the main repository for review.
-
-🔑 Notes
-Input Validation: The system is designed to handle mixed inputs (e.g., typing characters when a number is expected) by flushing the buffer and prompting the user again.
-
-Data Limits: The program is currently set to handle a maximum of 20 products (defined by product_limit equ 20).
