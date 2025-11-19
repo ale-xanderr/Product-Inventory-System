@@ -796,7 +796,7 @@ do_edit_product:
     jne .edit_bad_qty_type
 
     mov eax, [temp_qty]
-    cmp eax, 1
+    cmp eax, 0
     jl .edit_range_qty
     cmp eax, 99
     jg .edit_range_qty
@@ -1102,5 +1102,5 @@ exit_program:
     push exit_msg
     call _printf
     add esp, 46
-    
+
     ret
