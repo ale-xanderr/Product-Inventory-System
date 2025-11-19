@@ -987,27 +987,39 @@ print_single_product:
 ; Removes an item by shifting all subsequent items LEFT by one position
 delete_at_index:
     mov esi, ebx
-    inc esi     ; Source = index + 1
-    mov edi, ebx ; Dest = index
+    inc esi     ; Source index = index + 1
+    mov edi, ebx ; Dest index = index
+
 .shift_loop:
     cmp esi, [product_count]
     jge .shift_done
     
-    ; Shift Name
+    ; --- FIX START ---
+    ; 1. Save the Loop Counters (Indices) because we need registers for Pointers
     push edi
     push esi
+
+    ; 2. Calculate Destination Address (Put into EDI)
+    ; Address = product_names + (index * 21)
     mov eax, edi
     imul eax, product_length
     add eax, product_names
-    push eax 
-    mov eax, esi
+    mov edi, eax        ; EDI now holds the VALID MEMORY ADDRESS
+
+    ; 3. Calculate Source Address (Put into ESI)
+    ; Address = product_names + (index * 21)
+    mov eax, esi        
     imul eax, product_length
     add eax, product_names
-    push eax 
+    mov esi, eax        ; ESI now holds the VALID MEMORY ADDRESS
+
+    ; 4. Perform the String Copy
     call strcpy_manual
-    add esp, 8 
+
+    ; 5. Restore Loop Counters so the loop can continue correctly
     pop esi
     pop edi
+    ; --- FIX END ---
     
     ; Shift Qty
     mov eax, [quantities + esi * 4]
@@ -1020,6 +1032,7 @@ delete_at_index:
     inc edi
     inc esi
     jmp .shift_loop
+
 .shift_done:
     dec dword [product_count]
     ret
