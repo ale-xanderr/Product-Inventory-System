@@ -28,31 +28,31 @@ section .data
         "[2] Display Sorted by Quantity (Ascending)", 10, \
         "[3] Back to Main Menu", 10, 0
 
-    ; ================= SPECIALIZED ERROR MESSAGES =================
+    ; ================= MESSAGES & PROMPTS =================
     ; General
     choice_msg db "Enter choice: ", 0
     exit_msg db 10, "Exiting System... Goodbye!", 10, 0
     newline db 10, 0
     
-    ; Type Errors (User entered string instead of int)
-    err_not_number db 10, "Error: Invalid input! Please enter a number.", 10, 0
+    ; Error Messages (Renamed from err to error)
+    error_not_number db 10, "Error: Invalid input! Please enter a NUMBER.", 10, 0
     
-    ; Range Errors (User entered int, but wrong value)
-    err_menu_range db 10, "Error: Choice must be between 1 and 6.", 10, 0
-    err_sub_range  db 10, "Error: Choice must be between 1 and 3.", 10, 0
-    err_qty_range  db 10, "Error: Quantity must be between 1 and 99.", 10, 0
-    err_price_neg  db 10, "Error: Price cannot be negative.", 10, 0
+    ; Range Errors
+    error_menu_range db 10, "Error: Choice must be between 1 and 6.", 10, 0
+    error_sub_range  db 10, "Error: Choice must be between 1 and 3.", 10, 0
+    error_qty_range  db 10, "Error: Quantity must be between 1 and 99.", 10, 0
+    error_price_neg  db 10, "Error: Price cannot be negative.", 10, 0
 
-    ; Input Prompts
-    ask_name db "Enter product name (max 20 chars): ", 0
-    ask_qty db "Enter quantity (1-99): ", 0
-    ask_price db "Enter price (integer): ", 0
+    ; Input Prompts (Renamed from ask to prompt)
+    prompt_name db "Enter product name (max 20 chars): ", 0
+    prompt_qty db "Enter quantity (1-99): ", 0
+    prompt_price db "Enter price (integer): ", 0
 
     ; Edit Specific Prompts
-    edit_ask_old db "Enter the existing product name in the list: ", 0
-    edit_ask_new_name db "Enter new product name: ", 0
-    edit_ask_new_qty db "Enter new quantity: ", 0
-    edit_ask_new_price db "Enter new price: ", 0
+    edit_prompt_old db "Enter the existing product name in the list: ", 0
+    edit_prompt_new_name db "Enter new product name: ", 0
+    edit_prompt_new_qty db "Enter new quantity: ", 0
+    edit_prompt_new_price db "Enter new price: ", 0
     
     ; Status Messages
     msg_added db 10, "Product added successfully!", 10, 0
@@ -67,15 +67,16 @@ section .data
     msg_no_low_stock db 10, "No low-stock products found.", 10, 0
 
     ; ================= TABLE FORMATTING =================
-    tbl_header db 10, "=============================================================", 10, \
+    ; Renamed from tbl to table
+    table_header db 10, "=============================================================", 10, \
                       "Product             |  Quantity  |   Price    |   Total      ", 10, \
                       "=============================================================", 10, 0
     
-    tbl_row_fmt db "%-19s | %-10d | %-10d | %-10d", 10, 0
+    table_row_fmt db "%-19s | %-10d | %-10d | %-10d", 10, 0
 
-    tbl_footer_start db 10, "=============================================================", 10, \
+    table_footer_start db 10, "=============================================================", 10, \
                             "OVERALL TOTAL: ", 0
-    tbl_footer_end   db 10, "=============================================================", 10, 0
+    table_footer_end   db 10, "=============================================================", 10, 0
     
     fmt_int db "%d", 0
     fmt_str db "%s", 0
@@ -166,13 +167,13 @@ main_menu:
 
 .menu_type_err:
     call flush_buffer
-    push err_not_number
+    push error_not_number
     call _printf
     add esp, 4
     jmp .retry_menu 
 
 .menu_range_err:
-    push err_menu_range
+    push error_menu_range
     call _printf
     add esp, 4
     jmp .retry_menu
@@ -216,13 +217,13 @@ submenu_delete:
 
 .del_type_err:
     call flush_buffer
-    push err_not_number
+    push error_not_number
     call _printf
     add esp, 4
     jmp .retry_del
 
 .del_range_err:
-    push err_sub_range
+    push error_sub_range
     call _printf
     add esp, 4
     jmp .retry_del
@@ -260,13 +261,13 @@ submenu_search:
 
 .search_type_err:
     call flush_buffer
-    push err_not_number
+    push error_not_number
     call _printf
     add esp, 4
     jmp .retry_search
 
 .search_range_err:
-    push err_sub_range
+    push error_sub_range
     call _printf
     add esp, 4
     jmp .retry_search
@@ -304,13 +305,13 @@ submenu_display:
 
 .disp_type_err:
     call flush_buffer
-    push err_not_number
+    push error_not_number
     call _printf
     add esp, 4
     jmp .retry_disp
 
 .disp_range_err:
-    push err_sub_range
+    push error_sub_range
     call _printf
     add esp, 4
     jmp .retry_disp
@@ -329,7 +330,7 @@ do_add_product:
 
     ; 1. Ask Name
 .add_ask_name:
-    push ask_name
+    push prompt_name
     call _printf
     add esp, 4
 
@@ -344,7 +345,7 @@ do_add_product:
 
     ; 2. Ask Quantity
 .add_ask_qty:
-    push ask_qty
+    push prompt_qty
     call _printf
     add esp, 4
 
@@ -366,7 +367,7 @@ do_add_product:
 
     ; 3. Ask Price
 .add_ask_price:
-    push ask_price
+    push prompt_price
     call _printf
     add esp, 4
 
@@ -427,26 +428,26 @@ do_add_product:
 ; --- SPECIALIZED ERROR HANDLERS FOR ADD ---
 .invalid_qty_type:
     call flush_buffer
-    push err_not_number  ; "Input must be a NUMBER"
+    push error_not_number  ; "Input must be a NUMBER"
     call _printf
     add esp, 4
     jmp .add_ask_qty
 
 .invalid_qty_range:
-    push err_qty_range   ; "Quantity must be 1-99"
+    push error_qty_range   ; "Quantity must be 1-99"
     call _printf
     add esp, 4
     jmp .add_ask_qty
 
 .invalid_price_type:
     call flush_buffer
-    push err_not_number  ; "Input must be a NUMBER"
+    push error_not_number  ; "Input must be a NUMBER"
     call _printf
     add esp, 4
     jmp .add_ask_price
 
 .invalid_price_range:
-    push err_price_neg   ; "Price cannot be negative"
+    push error_price_neg   ; "Price cannot be negative"
     call _printf
     add esp, 4
     jmp .add_ask_price
@@ -459,7 +460,7 @@ do_delete_by_name:
     cmp eax, 0
     je .list_is_empty
 
-    push ask_name
+    push prompt_name
     call _printf
     add esp, 4
 
@@ -534,7 +535,7 @@ do_search_name:
     cmp eax, 0
     je .list_empty
 
-    push ask_name
+    push prompt_name
     call _printf
     add esp, 4
 
@@ -547,12 +548,12 @@ do_search_name:
     cmp ebx, -1
     je .s_not_found
 
-    push tbl_header
+    push table_header
     call _printf
     add esp, 4
     mov [current_index], ebx
     call print_single_product
-    push tbl_footer_end
+    push table_footer_end
     call _printf
     add esp, 4
     jmp submenu_search
@@ -577,7 +578,7 @@ do_search_low:
     cmp eax, 0
     je .list_empty
 
-    push tbl_header
+    push table_header
     call _printf
     add esp, 4
     mov ecx, [product_count]
@@ -602,7 +603,7 @@ do_search_low:
     jmp .low_loop
 
 .low_done:
-    push tbl_footer_end
+    push table_footer_end
     call _printf
     add esp, 4
     mov eax, [found_flag]
@@ -720,7 +721,7 @@ do_edit_product:
     call display_logic_all
 
 .edit_step1:
-    push edit_ask_old
+    push edit_prompt_old
     call _printf
     add esp, 4
     push temp_name
@@ -734,7 +735,7 @@ do_edit_product:
     mov [current_index], ebx
 
 .edit_step2:
-    push edit_ask_new_name
+    push edit_prompt_new_name
     call _printf
     add esp, 4
     push temp_name
@@ -743,7 +744,7 @@ do_edit_product:
     add esp, 8
 
 .edit_step3:
-    push edit_ask_new_qty
+    push edit_prompt_new_qty
     call _printf
     add esp, 4
     push temp_qty
@@ -761,7 +762,7 @@ do_edit_product:
     jg .edit_range_qty
 
 .edit_step4:
-    push edit_ask_new_price
+    push edit_prompt_new_price
     call _printf
     add esp, 4
     push temp_price
@@ -814,26 +815,26 @@ do_edit_product:
 ; --- EDIT SPECIALIZED ERROR HANDLERS ---
 .edit_bad_qty_type:
     call flush_buffer
-    push err_not_number
+    push error_not_number
     call _printf
     add esp, 4
     jmp .edit_step3
 
 .edit_range_qty:
-    push err_qty_range
+    push error_qty_range
     call _printf
     add esp, 4
     jmp .edit_step3
 
 .edit_bad_price_type:
     call flush_buffer
-    push err_not_number
+    push error_not_number
     call _printf
     add esp, 4
     jmp .edit_step4
 
 .edit_range_price:
-    push err_price_neg
+    push error_price_neg
     call _printf
     add esp, 4
     jmp .edit_step4
@@ -860,7 +861,7 @@ display_logic_all:
     mov ecx, [product_count]
     cmp ecx, 0
     je .disp_empty
-    push tbl_header
+    push table_header
     call _printf
     add esp, 4
     mov dword [grand_total], 0
@@ -875,14 +876,14 @@ display_logic_all:
     inc dword [loop_counter]
     jmp .d_loop
 .d_done:
-    push tbl_footer_start
+    push table_footer_start
     call _printf
     add esp, 4
     push dword [grand_total]
     push fmt_int
     call _printf
     add esp, 8
-    push tbl_footer_end
+    push table_footer_end
     call _printf
     add esp, 4
     ret
@@ -910,7 +911,7 @@ print_single_product:
     push edx                
     push eax                
     push esi                
-    push tbl_row_fmt
+    push table_row_fmt
     call _printf
     add esp, 20
     ret
