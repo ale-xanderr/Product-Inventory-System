@@ -34,8 +34,8 @@ section .data
     exit_msg db 10, "Exiting System... Goodbye!", 10, 0
     newline db 10, 0
     
-    ; Error Messages (Renamed from err to error)
-    error_not_number db 10, "Error: Invalid input! Please enter a number.", 10, 0
+    ; Error Messages
+    error_not_number db 10, "Error: Invalid input! Please enter a NUMBER.", 10, 0
     
     ; Range Errors
     error_menu_range db 10, "Error: Choice must be between 1 and 6.", 10, 0
@@ -43,7 +43,7 @@ section .data
     error_qty_range  db 10, "Error: Quantity must be between 1 and 99.", 10, 0
     error_price_neg  db 10, "Error: Price cannot be negative.", 10, 0
 
-    ; Input Prompts (Renamed from ask to prompt)
+    ; Input Prompts
     prompt_name db "Enter product name (max 20 chars): ", 0
     prompt_qty db "Enter quantity (1-99): ", 0
     prompt_price db "Enter price (integer): ", 0
@@ -67,7 +67,6 @@ section .data
     msg_no_low_stock db 10, "No low-stock products found.", 10, 0
 
     ; ================= TABLE FORMATTING =================
-    ; Renamed from tbl to table
     table_header db 10, "=============================================================", 10, \
                       "Product             |  Quantity  |   Price    |   Total      ", 10, \
                       "=============================================================", 10, 0
@@ -140,7 +139,7 @@ main_menu:
     call _scanf
     add esp, 8
 
-    ; 1. CHECK TYPE (Did they type a number?)
+    ; 1. CHECK TYPE (Did they enter a number?)
     cmp eax, 1
     jne .menu_type_err
 
@@ -151,7 +150,6 @@ main_menu:
     cmp eax, 6
     jg .menu_range_err
 
-    ; Valid choice processing
     cmp eax, 1
     je do_add_product
     cmp eax, 2
@@ -196,18 +194,15 @@ submenu_delete:
     call _scanf
     add esp, 8
     
-    ; Check Type
     cmp eax, 1
     jne .del_type_err
 
-    ; Check Range
     mov eax, [choice]
     cmp eax, 1
     jl .del_range_err
     cmp eax, 3
     jg .del_range_err
 
-    ; Process
     cmp eax, 1
     je do_delete_by_name
     cmp eax, 2
@@ -328,7 +323,9 @@ do_add_product:
     cmp eax, product_limit
     jge .full
 
-    ; 1. Ask Name
+    ; *** IMPORTANT: Clear buffer before asking for string ***
+    call flush_buffer
+
 .add_ask_name:
     push prompt_name
     call _printf
@@ -343,7 +340,6 @@ do_add_product:
     cmp eax, 1
     je .duplicate_error
 
-    ; 2. Ask Quantity
 .add_ask_qty:
     push prompt_qty
     call _printf
@@ -354,18 +350,15 @@ do_add_product:
     call _scanf
     add esp, 8
 
-    ; Validate Type
     cmp eax, 1
     jne .invalid_qty_type
 
-    ; Validate Range
     mov eax, [temp_qty]
     cmp eax, 1
     jl .invalid_qty_range
     cmp eax, 99
     jg .invalid_qty_range
 
-    ; 3. Ask Price
 .add_ask_price:
     push prompt_price
     call _printf
@@ -376,19 +369,15 @@ do_add_product:
     call _scanf
     add esp, 8
     
-    ; Validate Type
     cmp eax, 1
     jne .invalid_price_type
 
-    ; Validate Positive
     mov eax, [temp_price]
     cmp eax, 0
     jl .invalid_price_range
 
-    ; 4. Store Data
+    ; Store Data
     mov ebx, [product_count]
-    
-    ; Copy Name
     mov edi, product_names
     mov eax, ebx
     imul eax, product_length
@@ -396,12 +385,10 @@ do_add_product:
     mov esi, temp_name
     call strcpy_manual
 
-    ; Store Quantity
     lea edi, [quantities + ebx * 4]
     mov eax, [temp_qty]
     mov [edi], eax
 
-    ; Store Price
     lea edi, [prices + ebx * 4]
     mov eax, [temp_price]
     mov [edi], eax
@@ -425,29 +412,28 @@ do_add_product:
     add esp, 4
     jmp .add_ask_name 
 
-; --- SPECIALIZED ERROR HANDLERS FOR ADD ---
 .invalid_qty_type:
     call flush_buffer
-    push error_not_number  ; "Input must be a NUMBER"
+    push error_not_number
     call _printf
     add esp, 4
     jmp .add_ask_qty
 
 .invalid_qty_range:
-    push error_qty_range   ; "Quantity must be 1-99"
+    push error_qty_range
     call _printf
     add esp, 4
     jmp .add_ask_qty
 
 .invalid_price_type:
     call flush_buffer
-    push error_not_number  ; "Input must be a NUMBER"
+    push error_not_number
     call _printf
     add esp, 4
     jmp .add_ask_price
 
 .invalid_price_range:
-    push error_price_neg   ; "Price cannot be negative"
+    push error_price_neg
     call _printf
     add esp, 4
     jmp .add_ask_price
@@ -459,6 +445,9 @@ do_delete_by_name:
     mov eax, [product_count]
     cmp eax, 0
     je .list_is_empty
+
+    ; *** IMPORTANT FIX: Clear buffer before asking for string ***
+    call flush_buffer
 
     push prompt_name
     call _printf
@@ -534,6 +523,9 @@ do_search_name:
     mov eax, [product_count]
     cmp eax, 0
     je .list_empty
+
+    ; *** IMPORTANT FIX: Clear buffer before asking for string ***
+    call flush_buffer
 
     push prompt_name
     call _printf
@@ -718,7 +710,11 @@ do_edit_product:
     cmp eax, 0
     je .edit_empty
 
+    ; Calls display logic (including footer)
     call display_logic_all
+
+    ; *** IMPORTANT FIX: Clear buffer before asking for string ***
+    call flush_buffer
 
 .edit_step1:
     push edit_prompt_old
@@ -752,7 +748,6 @@ do_edit_product:
     call _scanf
     add esp, 8
     
-    ; Validation QTY
     cmp eax, 1
     jne .edit_bad_qty_type
     mov eax, [temp_qty]
@@ -770,7 +765,6 @@ do_edit_product:
     call _scanf
     add esp, 8
 
-    ; Validation Price
     cmp eax, 1
     jne .edit_bad_price_type
     mov eax, [temp_price]
@@ -812,7 +806,6 @@ do_edit_product:
     add esp, 4
     jmp main_menu
 
-; --- EDIT SPECIALIZED ERROR HANDLERS ---
 .edit_bad_qty_type:
     call flush_buffer
     push error_not_number
@@ -843,7 +836,7 @@ do_edit_product:
 ; HELPERS
 ; ==========================================================
 
-; *** FLUSH BUFFER: Clears invalid input from stdin ***
+; *** FLUSH BUFFER: Consumes input until a newline is found ***
 flush_buffer:
     push ebx
 .flush_loop:
@@ -876,6 +869,7 @@ display_logic_all:
     inc dword [loop_counter]
     jmp .d_loop
 .d_done:
+    ; --- FOOTER LOGIC ---
     push table_footer_start
     call _printf
     add esp, 4
