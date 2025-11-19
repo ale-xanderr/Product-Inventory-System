@@ -1,7 +1,5 @@
 section .data
     ; ================= MENUS & HEADERS =================
-    ; These strings define how the UI looks. 
-    ; The '10' is the ASCII code for a Newline character.
     header db 10, "==================================================", 10, \
             "            PRODUCT INVENTORY SYSTEM", 10, \
             "==================================================", 10, 0
@@ -36,8 +34,8 @@ section .data
     newline db 10, 0
     
     ; -- Error Messages --
-    ; Specific messages help the user know exactly what they did wrong
     error_not_number db 10, "Error: Invalid input! Please enter a NUMBER.", 10, 0
+    error_name_invalid db 10, "Error: Name cannot contain numbers or spaces.", 10, 0
     
     ; -- Range Errors --
     error_menu_range db 10, "Error: Choice must be between 1 and 6.", 10, 0
@@ -69,12 +67,10 @@ section .data
     msg_no_low_stock db 10, "No low-stock products found.", 10, 0
 
     ; ================= TABLE FORMATTING =================
-    ; This creates the clean columns for the list display
     table_header db 10, "=============================================================", 10, \
                       "Product             |  Quantity  |   Price    |   Total      ", 10, \
                       "=============================================================", 10, 0
     
-    ; The format string for printf: String(Name) | Int(Qty) | Int(Price) | Int(Total)
     table_row_fmt db "%-19s | %-10d | %-10d | %-10d", 10, 0
 
     table_footer_start db 10, "=============================================================", 10, \
@@ -89,43 +85,38 @@ section .bss
     choice resd 1
     
     ; Constants
-    product_limit equ 20     ; Maximum products allowed
-    product_length equ 21    ; Max name length (20 chars + null terminator)
+    product_limit equ 20
+    product_length equ 21
 
-    ; -- PARALLEL ARRAYS --
-    ; We don't have 'structs' in basic assembly, so we use separate arrays.
-    ; Index 0 of 'product_names' corresponds to Index 0 of 'quantities', etc.
+    ; Data Storage
     product_count resd 1
     product_names resb product_limit * product_length
     quantities    resd product_limit
     prices        resd product_limit
     
-    ; -- Temporary Storage --
-    ; Used to hold input before we decide to save it to the main arrays
+    ; Temp variables
     temp_name resb product_length
     temp_qty  resd 1
     temp_price resd 1
     
-    ; -- Logic Variables --
-    current_index resd 1   ; Used to remember which item we are processing
-    loop_counter resd 1    ; Used for loops (i)
-    grand_total resd 1     ; Sum of all asset values
-    item_total  resd 1     ; Qty * Price for a single row
-    found_flag  resd 1     ; Boolean flag (0 or 1) for searches
+    ; Logic vars
+    current_index resd 1
+    loop_counter resd 1
+    grand_total resd 1
+    item_total  resd 1
+    found_flag  resd 1
 
 section .text
     global _main
     extern _printf, _scanf, _getchar
 
 _main:
-    ; Initialize our counter to 0 when program starts
     mov dword [product_count], 0
 
 ; ==========================================================
 ; MAIN MENU LOGIC
 ; ==========================================================
 main_menu:
-    ; Print the beautiful header and options
     push newline
     call _printf
     add esp, 4
@@ -148,18 +139,19 @@ main_menu:
     call _scanf
     add esp, 8
 
-    ; VALIDATION 1: Check if scanf returned 1 (meaning it successfully read an integer)
+    ; Validation (Type & Newline)
     cmp eax, 1
     jne .menu_type_err
+    call _getchar
+    cmp eax, 10 
+    jne .menu_type_err
 
-    ; VALIDATION 2: Check if the integer is within the valid range (1-6)
     mov eax, [choice]
     cmp eax, 1
     jl .menu_range_err
     cmp eax, 6
     jg .menu_range_err
 
-    ; Switch case logic to jump to the right function
     cmp eax, 1
     je do_add_product
     cmp eax, 2
@@ -174,7 +166,6 @@ main_menu:
     je exit_program
 
 .menu_type_err:
-    ; If they typed letters ("abc"), we must clear the buffer, or it loops infinitely
     call flush_buffer
     push error_not_number
     call _printf
@@ -182,7 +173,6 @@ main_menu:
     jmp .retry_menu 
 
 .menu_range_err:
-    ; If number is out of bounds (e.g., 9), just ask again. No need to flush.
     push error_menu_range
     call _printf
     add esp, 4
@@ -192,7 +182,6 @@ main_menu:
 ; SUBMENUS
 ; ==========================================================
 submenu_delete:
-    ; Always show the current list first so the user knows what to delete
     call display_logic_all 
     push menu_delete
     call _printf
@@ -207,9 +196,12 @@ submenu_delete:
     call _scanf
     add esp, 8
     
-    ; Validation logic (Type & Range 1-3)
     cmp eax, 1
     jne .del_type_err
+    call _getchar
+    cmp eax, 10
+    jne .del_type_err
+
     mov eax, [choice]
     cmp eax, 1
     jl .del_range_err
@@ -221,7 +213,7 @@ submenu_delete:
     cmp eax, 2
     je do_delete_zero
     cmp eax, 3
-    je main_menu
+    je main_menu ; [3] Goes back to Main Menu
 
 .del_type_err:
     call flush_buffer
@@ -253,6 +245,10 @@ submenu_search:
 
     cmp eax, 1
     jne .search_type_err
+    call _getchar
+    cmp eax, 10
+    jne .search_type_err
+
     mov eax, [choice]
     cmp eax, 1
     jl .search_range_err
@@ -264,7 +260,7 @@ submenu_search:
     cmp eax, 2
     je do_search_low
     cmp eax, 3
-    je main_menu
+    je main_menu ; [3] Goes back to Main Menu
 
 .search_type_err:
     call flush_buffer
@@ -296,6 +292,10 @@ submenu_display:
 
     cmp eax, 1
     jne .disp_type_err
+    call _getchar
+    cmp eax, 10
+    jne .disp_type_err
+
     mov eax, [choice]
     cmp eax, 1
     jl .disp_range_err
@@ -307,7 +307,7 @@ submenu_display:
     cmp eax, 2
     je do_display_sorted
     cmp eax, 3
-    je main_menu
+    je main_menu ; [3] Goes back to Main Menu
 
 .disp_type_err:
     call flush_buffer
@@ -324,22 +324,15 @@ submenu_display:
 
 do_display_all_wrapper:
     call display_logic_all
-    jmp main_menu
+    jmp submenu_display     ; CHANGED: Stay in Display Menu
 
 ; ==========================================================
 ; [1] ADD PRODUCT
 ; ==========================================================
 do_add_product:
-    ; 1. Check if we reached the limit (20)
     mov eax, [product_count]
     cmp eax, product_limit
     jge .full
-
-    ; *** CRITICAL STEP ***
-    ; We just came from a menu selection (integer input). 
-    ; The 'Enter' key is still in the buffer. We MUST clear it, 
-    ; otherwise the next string input will automatically read nothing and skip.
-    call flush_buffer
 
 .add_ask_name:
     push prompt_name
@@ -351,7 +344,15 @@ do_add_product:
     call _scanf
     add esp, 8
     
-    ; Check if this name already exists
+    ; Validation: Trailing junk & Digits inside name
+    call _getchar
+    cmp eax, 10
+    jne .name_has_garbage
+
+    call check_name_alpha
+    cmp eax, 0
+    je .name_has_digits
+
     call check_duplicate_func
     cmp eax, 1
     je .duplicate_error
@@ -366,8 +367,10 @@ do_add_product:
     call _scanf
     add esp, 8
 
-    ; Validate Quantity (Number check & 1-99 check)
     cmp eax, 1
+    jne .invalid_qty_type
+    call _getchar 
+    cmp eax, 10 
     jne .invalid_qty_type
 
     mov eax, [temp_qty]
@@ -386,18 +389,18 @@ do_add_product:
     call _scanf
     add esp, 8
     
-    ; Validate Price (Number check & Positive check)
     cmp eax, 1
+    jne .invalid_price_type
+    call _getchar
+    cmp eax, 10
     jne .invalid_price_type
 
     mov eax, [temp_price]
     cmp eax, 0
     jl .invalid_price_range
 
-    ; === SAVE DATA TO ARRAYS ===
+    ; Store Data
     mov ebx, [product_count]
-    
-    ; 1. Save Name (Calculate address: base + (index * 21))
     mov edi, product_names
     mov eax, ebx
     imul eax, product_length
@@ -405,17 +408,14 @@ do_add_product:
     mov esi, temp_name
     call strcpy_manual
 
-    ; 2. Save Quantity (Calculate address: base + (index * 4))
     lea edi, [quantities + ebx * 4]
     mov eax, [temp_qty]
     mov [edi], eax
 
-    ; 3. Save Price (Calculate address: base + (index * 4))
     lea edi, [prices + ebx * 4]
     mov eax, [temp_price]
     mov [edi], eax
 
-    ; Increment total product count
     inc dword [product_count]
 
     push msg_added
@@ -435,9 +435,21 @@ do_add_product:
     add esp, 4
     jmp .add_ask_name 
 
-; -- Add Product Error Handlers --
+.name_has_garbage:
+    call flush_buffer
+    push error_name_invalid
+    call _printf
+    add esp, 4
+    jmp .add_ask_name
+
+.name_has_digits:
+    push error_name_invalid
+    call _printf
+    add esp, 4
+    jmp .add_ask_name
+
 .invalid_qty_type:
-    call flush_buffer ; Clear bad input
+    call flush_buffer
     push error_not_number
     call _printf
     add esp, 4
@@ -450,7 +462,7 @@ do_add_product:
     jmp .add_ask_qty
 
 .invalid_price_type:
-    call flush_buffer ; Clear bad input
+    call flush_buffer
     push error_not_number
     call _printf
     add esp, 4
@@ -470,9 +482,6 @@ do_delete_by_name:
     cmp eax, 0
     je .list_is_empty
 
-    ; Clear buffer because we are about to ask for a String name
-    call flush_buffer
-
     push prompt_name
     call _printf
     add esp, 4
@@ -482,29 +491,29 @@ do_delete_by_name:
     call _scanf
     add esp, 8
 
-    ; Search for the name
+    call flush_buffer 
+
     call get_product_index
-    cmp ebx, -1 ; -1 means not found
+    cmp ebx, -1
     je .not_found
 
-    ; If found (ebx has the index), delete it
     call delete_at_index
     push msg_deleted
     call _printf
     add esp, 4
-    jmp submenu_delete
+    jmp submenu_delete      ; CHANGED: Stay in Delete Menu
 
 .not_found:
     push msg_not_found
     call _printf
     add esp, 4
-    jmp submenu_delete
+    jmp submenu_delete      ; CHANGED: Stay in Delete Menu
 
 .list_is_empty:
     push msg_empty
     call _printf
     add esp, 4
-    jmp submenu_delete
+    jmp submenu_delete      ; CHANGED: Stay in Delete Menu
 
 ; ==========================================================
 ; [2.2] DELETE ZERO STOCK
@@ -516,38 +525,31 @@ do_delete_zero:
     mov ebx, 0
 
 .loop_check:
-    ; Loop through the entire array
     cmp ebx, [product_count]
     jge .done_zero
-    
-    ; Check quantity at current index
     mov eax, [quantities + ebx * 4]
     cmp eax, 0
     je .found_zero
-    
     inc ebx
     jmp .loop_check
 
 .found_zero:
-    push ebx ; Save ebx because delete_at_index might mess with registers
+    push ebx
     call delete_at_index
     pop ebx
-    ; IMPORTANT: Do NOT increment ebx here. 
-    ; When we delete, items shift left. The new item at this index 
-    ; hasn't been checked yet. So we loop again at the SAME index.
     jmp .loop_check
 
 .done_zero:
     push msg_zero_deleted
     call _printf
     add esp, 4
-    jmp submenu_delete
+    jmp submenu_delete      ; CHANGED: Stay in Delete Menu
 
 .list_is_empty:
     push msg_empty
     call _printf
     add esp, 4
-    jmp submenu_delete
+    jmp submenu_delete      ; CHANGED: Stay in Delete Menu
 
 ; ==========================================================
 ; [3.1] SEARCH BY NAME
@@ -557,9 +559,6 @@ do_search_name:
     cmp eax, 0
     je .list_empty
 
-    ; Clear buffer for string input
-    call flush_buffer
-
     push prompt_name
     call _printf
     add esp, 4
@@ -568,12 +567,13 @@ do_search_name:
     push fmt_str
     call _scanf
     add esp, 8
+    
+    call flush_buffer
 
     call get_product_index
     cmp ebx, -1
     je .s_not_found
 
-    ; Print the table header, then the single row found
     push table_header
     call _printf
     add esp, 4
@@ -582,19 +582,19 @@ do_search_name:
     push table_footer_end
     call _printf
     add esp, 4
-    jmp submenu_search
+    jmp submenu_search      ; CHANGED: Stay in Search Menu
 
 .s_not_found:
     push msg_not_found
     call _printf
     add esp, 4
-    jmp submenu_search
+    jmp submenu_search      ; CHANGED: Stay in Search Menu
 
 .list_empty:
     push msg_empty
     call _printf
     add esp, 4
-    jmp submenu_search
+    jmp submenu_search      ; CHANGED: Stay in Search Menu
 
 ; ==========================================================
 ; [3.2] SEARCH LOW STOCK
@@ -614,13 +614,9 @@ do_search_low:
 .low_loop:
     cmp ebx, ecx
     jge .low_done
-    
-    ; Check if quantity < 5
     mov eax, [quantities + ebx*4]
     cmp eax, 5
     jge .skip_low
-    
-    ; Print this item
     mov [current_index], ebx
     push ecx
     push ebx
@@ -628,7 +624,6 @@ do_search_low:
     pop ebx
     pop ecx
     mov dword [found_flag], 1 
-
 .skip_low:
     inc ebx
     jmp .low_loop
@@ -637,27 +632,25 @@ do_search_low:
     push table_footer_end
     call _printf
     add esp, 4
-    
-    ; If flag is still 0, we didn't find anything
     mov eax, [found_flag]
     cmp eax, 0
     je .no_low_found
-    jmp submenu_search
+    jmp submenu_search      ; CHANGED: Stay in Search Menu
 
 .no_low_found:
     push msg_no_low_stock
     call _printf
     add esp, 4
-    jmp submenu_search
+    jmp submenu_search      ; CHANGED: Stay in Search Menu
 
 .list_empty:
     push msg_empty
     call _printf
     add esp, 4
-    jmp submenu_search
+    jmp submenu_search      ; CHANGED: Stay in Search Menu
 
 ; ==========================================================
-; [4.2] DISPLAY SORTED (BUBBLE SORT)
+; [4.2] DISPLAY SORTED
 ; ==========================================================
 do_display_sorted:
     mov eax, [product_count]
@@ -670,44 +663,34 @@ do_display_sorted:
 
     mov ecx, [product_count]
     cmp ecx, 2
-    jl .sort_done ; Don't sort if 0 or 1 item
+    jl .sort_done
     dec ecx
     mov ebx, 0 
-
 .outer_loop:
     cmp ebx, ecx
     jge .sort_done
     mov edx, 0
     mov esi, ecx
     sub esi, ebx 
-
 .inner_loop:
     cmp edx, esi
     jge .next_outer
-    
-    ; Compare Qty[j] and Qty[j+1]
     mov eax, [quantities + edx*4]
     mov edi, [quantities + edx*4 + 4]
     cmp eax, edi
     jle .no_swap
 
-    ; --- SWAP LOGIC (If out of order) ---
-    ; 1. Swap Quantities
+    ; SWAP
     mov [quantities + edx*4], edi
     mov [quantities + edx*4 + 4], eax
-    
-    ; 2. Swap Prices
     mov eax, [prices + edx*4]
     mov edi, [prices + edx*4 + 4]
     mov [prices + edx*4], edi
     mov [prices + edx*4 + 4], eax
     
-    ; 3. Swap Names (Complex because they are strings)
     push ecx
     push ebx
     push esi
-    
-    ; Copy name 1 to temp
     mov eax, edx
     imul eax, product_length
     add eax, product_names
@@ -716,8 +699,6 @@ do_display_sorted:
     mov esi, eax
     call strcpy_manual
     pop eax
-    
-    ; Copy name 2 to name 1
     mov eax, edx
     inc eax
     imul eax, product_length
@@ -728,8 +709,6 @@ do_display_sorted:
     add eax, product_names
     mov edi, eax
     call strcpy_manual
-    
-    ; Copy temp to name 2
     mov esi, temp_name
     mov eax, edx
     inc eax
@@ -737,7 +716,6 @@ do_display_sorted:
     add eax, product_names
     mov edi, eax
     call strcpy_manual
-    
     pop esi
     pop ebx
     pop ecx
@@ -750,13 +728,13 @@ do_display_sorted:
     jmp .outer_loop
 .sort_done:
     call display_logic_all
-    jmp main_menu
+    jmp submenu_display     ; CHANGED: Stay in Display Menu
 
 .empty_sort:
     push msg_empty
     call _printf
     add esp, 4
-    jmp main_menu
+    jmp submenu_display     ; CHANGED: Stay in Display Menu
 
 ; ==========================================================
 ; [5] EDIT PRODUCT
@@ -766,11 +744,7 @@ do_edit_product:
     cmp eax, 0
     je .edit_empty
 
-    ; Display the list so user knows what to type
     call display_logic_all
-
-    ; Clear buffer for string input
-    call flush_buffer
 
 .edit_step1:
     push edit_prompt_old
@@ -780,8 +754,9 @@ do_edit_product:
     push fmt_str
     call _scanf
     add esp, 8
+    
+    call flush_buffer
 
-    ; Find the item to edit
     call get_product_index
     cmp ebx, -1
     je .edit_not_found
@@ -795,6 +770,15 @@ do_edit_product:
     push fmt_str
     call _scanf
     add esp, 8
+    
+    ; Validation for Edit Name
+    call _getchar
+    cmp eax, 10
+    jne .edit_name_has_garbage
+
+    call check_name_alpha
+    cmp eax, 0
+    je .edit_bad_name_type
 
 .edit_step3:
     push edit_prompt_new_qty
@@ -805,9 +789,12 @@ do_edit_product:
     call _scanf
     add esp, 8
     
-    ; Validate new Qty
     cmp eax, 1
     jne .edit_bad_qty_type
+    call _getchar
+    cmp eax, 10
+    jne .edit_bad_qty_type
+
     mov eax, [temp_qty]
     cmp eax, 1
     jl .edit_range_qty
@@ -823,17 +810,19 @@ do_edit_product:
     call _scanf
     add esp, 8
 
-    ; Validate new Price
     cmp eax, 1
     jne .edit_bad_price_type
+    call _getchar
+    cmp eax, 10
+    jne .edit_bad_price_type
+
     mov eax, [temp_price]
     cmp eax, 0
     jl .edit_range_price
 
-    ; --- SAVE UPDATES ---
+    ; Save Updates
     mov ebx, [current_index]
     
-    ; Update Name
     mov edi, product_names
     mov eax, ebx
     imul eax, product_length
@@ -841,12 +830,10 @@ do_edit_product:
     mov esi, temp_name
     call strcpy_manual
 
-    ; Update Qty
     lea edi, [quantities + ebx * 4]
     mov eax, [temp_qty]
     mov [edi], eax
 
-    ; Update Price
     lea edi, [prices + ebx * 4]
     mov eax, [temp_price]
     mov [edi], eax
@@ -867,6 +854,19 @@ do_edit_product:
     call _printf
     add esp, 4
     jmp main_menu
+
+.edit_name_has_garbage:
+    call flush_buffer
+    push error_name_invalid
+    call _printf
+    add esp, 4
+    jmp .edit_step2
+
+.edit_bad_name_type:
+    push error_name_invalid
+    call _printf
+    add esp, 4
+    jmp .edit_step2
 
 .edit_bad_qty_type:
     call flush_buffer
@@ -898,25 +898,42 @@ do_edit_product:
 ; HELPERS
 ; ==========================================================
 
-; *** FLUSH BUFFER ***
-; This function keeps reading characters from the input 
-; until it hits a Newline (Enter key). 
-; It prevents "ghost" inputs from messing up the next scan.
 flush_buffer:
     push ebx
 .flush_loop:
     call _getchar
-    cmp eax, 10 ; Check for newline
+    cmp eax, 10
     je .flush_done
-    cmp eax, -1 ; Check for EOF
+    cmp eax, -1
     je .flush_done
     jmp .flush_loop
 .flush_done:
     pop ebx
     ret
 
-; *** DISPLAY LOGIC ***
-; Loops through all products and calculates the Grand Total
+check_name_alpha:
+    push esi
+    mov esi, temp_name
+.check_loop:
+    mov al, [esi]
+    cmp al, 0
+    je .check_ok
+    cmp al, '0'
+    jl .next_char
+    cmp al, '9'
+    jle .check_fail 
+.next_char:
+    inc esi
+    jmp .check_loop
+.check_fail:
+    pop esi
+    mov eax, 0
+    ret
+.check_ok:
+    pop esi
+    mov eax, 1
+    ret
+
 display_logic_all:
     mov ecx, [product_count]
     cmp ecx, 0
@@ -936,7 +953,6 @@ display_logic_all:
     inc dword [loop_counter]
     jmp .d_loop
 .d_done:
-    ; Print Footer with Grand Total
     push table_footer_start
     call _printf
     add esp, 4
@@ -954,8 +970,6 @@ display_logic_all:
     add esp, 4
     ret
 
-; *** PRINT SINGLE PRODUCT ***
-; Prints one row and adds (Qty * Price) to the Grand Total
 print_single_product:
     mov ebx, [current_index]
     mov edi, product_names
@@ -966,14 +980,10 @@ print_single_product:
     mov eax, [quantities + ebx*4]
     mov edx, [prices + ebx*4]
     push eax 
-    
-    ; Calculate Total Value for this item
     imul eax, edx 
     mov [item_total], eax
-    add [grand_total], eax ; Add to global sum
+    add [grand_total], eax
     pop eax 
-    
-    ; Print the formatted row
     push dword [item_total]
     push edx                
     push eax                
@@ -983,52 +993,31 @@ print_single_product:
     add esp, 20
     ret
 
-; *** DELETE AT INDEX ***
-; Removes an item by shifting all subsequent items LEFT by one position
 delete_at_index:
     mov esi, ebx
-    inc esi     ; Source index = index + 1
-    mov edi, ebx ; Dest index = index
+    inc esi     
+    mov edi, ebx 
 
 .shift_loop:
     cmp esi, [product_count]
     jge .shift_done
-    
-    ; --- FIX START ---
-    ; 1. Save the Loop Counters (Indices) because we need registers for Pointers
     push edi
     push esi
-
-    ; 2. Calculate Destination Address (Put into EDI)
-    ; Address = product_names + (index * 21)
     mov eax, edi
     imul eax, product_length
     add eax, product_names
-    mov edi, eax        ; EDI now holds the VALID MEMORY ADDRESS
-
-    ; 3. Calculate Source Address (Put into ESI)
-    ; Address = product_names + (index * 21)
+    mov edi, eax        
     mov eax, esi        
     imul eax, product_length
     add eax, product_names
-    mov esi, eax        ; ESI now holds the VALID MEMORY ADDRESS
-
-    ; 4. Perform the String Copy
+    mov esi, eax        
     call strcpy_manual
-
-    ; 5. Restore Loop Counters so the loop can continue correctly
     pop esi
     pop edi
-    ; --- FIX END ---
-    
-    ; Shift Qty
     mov eax, [quantities + esi * 4]
     mov [quantities + edi * 4], eax
-    
-    ; Shift Price
     mov eax, [prices + esi * 4]
     mov [prices + edi * 4], eax
-    
     inc edi
     inc esi
     jmp .shift_loop
@@ -1037,9 +1026,6 @@ delete_at_index:
     dec dword [product_count]
     ret
 
-; *** GET PRODUCT INDEX ***
-; Helper to find the index of 'temp_name' in the list.
-; Returns: Index in EBX, or -1 if not found.
 get_product_index:
     mov ecx, [product_count]
     cmp ecx, 0
@@ -1068,8 +1054,6 @@ get_product_index:
 .pi_found:
     ret 
 
-; *** CHECK DUPLICATE ***
-; Returns 1 if found, 0 if not.
 check_duplicate_func:
     call get_product_index
     cmp ebx, -1
@@ -1080,8 +1064,6 @@ check_duplicate_func:
     mov eax, 1
     ret
 
-; *** STRING COPY ***
-; Copy string from ESI to EDI byte by byte
 strcpy_manual:
 .copy_char:
     mov al, [esi]
@@ -1092,8 +1074,6 @@ strcpy_manual:
     jne .copy_char
     ret
 
-; *** STRING COMPARE ***
-; Compare string at ESI with EDI. Returns 1 if equal, 0 if not.
 strcmp_manual:
     push esi
     push edi
@@ -1121,5 +1101,6 @@ strcmp_manual:
 exit_program:
     push exit_msg
     call _printf
-    add esp, 4
+    add esp, 46
+    
     ret
