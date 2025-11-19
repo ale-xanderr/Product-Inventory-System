@@ -35,7 +35,7 @@ section .data
     newline db 10, 0
     
     ; Error Messages (Renamed from err to error)
-    error_not_number db 10, "Error: Invalid input! Please enter a NUMBER.", 10, 0
+    error_not_number db 10, "Error: Invalid input! Please enter a number.", 10, 0
     
     ; Range Errors
     error_menu_range db 10, "Error: Choice must be between 1 and 6.", 10, 0
