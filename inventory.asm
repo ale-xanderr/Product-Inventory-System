@@ -1101,6 +1101,6 @@ strcmp_manual:
 exit_program:
     push exit_msg
     call _printf
-    add esp, 46
+    add esp, 4
 
     ret
