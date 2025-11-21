@@ -16,17 +16,24 @@ section .data
     menu_delete db 10, "--- DELETE MENU ---", 10, \
         "[1] Delete by Name", 10, \
         "[2] Delete All Zero Stock", 10, \
-        "[3] Back to Main Menu", 10, 0
+        "[3] Return to Main Menu", 10, 0
 
     menu_search db 10, "--- SEARCH MENU ---", 10, \
         "[1] Search by Name", 10, \
         "[2] Search Low Stock (< 5)", 10, \
-        "[3] Back to Main Menu", 10, 0
+        "[3] Return to Main Menu", 10, 0
 
     menu_display db 10, "--- DISPLAY MENU ---", 10, \
         "[1] Display All (Unsorted)", 10, \
         "[2] Display Sorted by Quantity (Ascending)", 10, \
-        "[3] Back to Main Menu", 10, 0
+        "[3] Return to Main Menu", 10, 0
+
+    ; *** NEW EDIT MENU ***
+    menu_edit_options db 10, "--- WHAT DO YOU WANT TO EDIT? ---", 10, \
+        "[1] Edit Name", 10, \
+        "[2] Edit Quantity", 10, \
+        "[3] Edit Price", 10, \
+        "[4] Return to Main Menu", 10, 0
 
     ; ================= MESSAGES & PROMPTS =================
     choice_msg db "Enter choice: ", 0
@@ -40,6 +47,7 @@ section .data
     ; -- Range Errors --
     error_menu_range db 10, "Error: Choice must be between 1 and 6.", 10, 0
     error_sub_range  db 10, "Error: Choice must be between 1 and 3.", 10, 0
+    error_edit_range db 10, "Error: Choice must be between 1 and 4.", 10, 0 ; For Edit Menu
     error_qty_range  db 10, "Error: Quantity must be between 1 and 99.", 10, 0
     error_price_neg  db 10, "Error: Price cannot be negative.", 10, 0
 
@@ -49,10 +57,10 @@ section .data
     prompt_price db "Enter price (integer): ", 0
 
     ; -- Edit Specific Prompts --
-    edit_prompt_old db "Enter the existing product name in the list: ", 0
-    edit_prompt_new_name db "Enter new product name: ", 0
-    edit_prompt_new_qty db "Enter new quantity: ", 0
-    edit_prompt_new_price db "Enter new price: ", 0
+    edit_prompt_old db "Enter the existing product name to edit: ", 0
+    edit_prompt_new_name db "Enter NEW product name: ", 0
+    edit_prompt_new_qty db "Enter NEW quantity: ", 0
+    edit_prompt_new_price db "Enter NEW price: ", 0
     
     ; -- Status Messages --
     msg_added db 10, "Product added successfully!", 10, 0
@@ -139,7 +147,7 @@ main_menu:
     call _scanf
     add esp, 8
 
-    ; Validation (Type & Newline)
+    ; Validation
     cmp eax, 1
     jne .menu_type_err
     call _getchar
@@ -213,7 +221,7 @@ submenu_delete:
     cmp eax, 2
     je do_delete_zero
     cmp eax, 3
-    je main_menu ; [3] Goes back to Main Menu
+    je main_menu
 
 .del_type_err:
     call flush_buffer
@@ -260,7 +268,7 @@ submenu_search:
     cmp eax, 2
     je do_search_low
     cmp eax, 3
-    je main_menu ; [3] Goes back to Main Menu
+    je main_menu
 
 .search_type_err:
     call flush_buffer
@@ -307,7 +315,7 @@ submenu_display:
     cmp eax, 2
     je do_display_sorted
     cmp eax, 3
-    je main_menu ; [3] Goes back to Main Menu
+    je main_menu
 
 .disp_type_err:
     call flush_buffer
@@ -324,7 +332,7 @@ submenu_display:
 
 do_display_all_wrapper:
     call display_logic_all
-    jmp submenu_display     ; CHANGED: Stay in Display Menu
+    jmp submenu_display
 
 ; ==========================================================
 ; [1] ADD PRODUCT
@@ -344,7 +352,7 @@ do_add_product:
     call _scanf
     add esp, 8
     
-    ; Validation: Trailing junk & Digits inside name
+    ; Validation: Trailing junk & Digits
     call _getchar
     cmp eax, 10
     jne .name_has_garbage
@@ -501,19 +509,19 @@ do_delete_by_name:
     push msg_deleted
     call _printf
     add esp, 4
-    jmp submenu_delete      ; CHANGED: Stay in Delete Menu
+    jmp submenu_delete
 
 .not_found:
     push msg_not_found
     call _printf
     add esp, 4
-    jmp submenu_delete      ; CHANGED: Stay in Delete Menu
+    jmp submenu_delete
 
 .list_is_empty:
     push msg_empty
     call _printf
     add esp, 4
-    jmp submenu_delete      ; CHANGED: Stay in Delete Menu
+    jmp submenu_delete
 
 ; ==========================================================
 ; [2.2] DELETE ZERO STOCK
@@ -543,13 +551,13 @@ do_delete_zero:
     push msg_zero_deleted
     call _printf
     add esp, 4
-    jmp submenu_delete      ; CHANGED: Stay in Delete Menu
+    jmp submenu_delete
 
 .list_is_empty:
     push msg_empty
     call _printf
     add esp, 4
-    jmp submenu_delete      ; CHANGED: Stay in Delete Menu
+    jmp submenu_delete
 
 ; ==========================================================
 ; [3.1] SEARCH BY NAME
@@ -582,19 +590,19 @@ do_search_name:
     push table_footer_end
     call _printf
     add esp, 4
-    jmp submenu_search      ; CHANGED: Stay in Search Menu
+    jmp submenu_search
 
 .s_not_found:
     push msg_not_found
     call _printf
     add esp, 4
-    jmp submenu_search      ; CHANGED: Stay in Search Menu
+    jmp submenu_search
 
 .list_empty:
     push msg_empty
     call _printf
     add esp, 4
-    jmp submenu_search      ; CHANGED: Stay in Search Menu
+    jmp submenu_search
 
 ; ==========================================================
 ; [3.2] SEARCH LOW STOCK
@@ -635,19 +643,19 @@ do_search_low:
     mov eax, [found_flag]
     cmp eax, 0
     je .no_low_found
-    jmp submenu_search      ; CHANGED: Stay in Search Menu
+    jmp submenu_search
 
 .no_low_found:
     push msg_no_low_stock
     call _printf
     add esp, 4
-    jmp submenu_search      ; CHANGED: Stay in Search Menu
+    jmp submenu_search
 
 .list_empty:
     push msg_empty
     call _printf
     add esp, 4
-    jmp submenu_search      ; CHANGED: Stay in Search Menu
+    jmp submenu_search
 
 ; ==========================================================
 ; [4.2] DISPLAY SORTED
@@ -728,13 +736,13 @@ do_display_sorted:
     jmp .outer_loop
 .sort_done:
     call display_logic_all
-    jmp submenu_display     ; CHANGED: Stay in Display Menu
+    jmp submenu_display
 
 .empty_sort:
     push msg_empty
     call _printf
     add esp, 4
-    jmp submenu_display     ; CHANGED: Stay in Display Menu
+    jmp submenu_display
 
 ; ==========================================================
 ; [5] EDIT PRODUCT
@@ -747,6 +755,7 @@ do_edit_product:
     call display_logic_all
 
 .edit_step1:
+    ; 1. Ask for product to edit
     push edit_prompt_old
     call _printf
     add esp, 4
@@ -757,12 +766,65 @@ do_edit_product:
     
     call flush_buffer
 
+    ; 2. Find the product
     call get_product_index
     cmp ebx, -1
     je .edit_not_found
-    mov [current_index], ebx
+    mov [current_index], ebx ; Store index
 
-.edit_step2:
+; *** NEW EDIT SUB-MENU LOOP ***
+.edit_menu_loop:
+    ; Print Edit Options
+    push menu_edit_options
+    call _printf
+    add esp, 4
+
+    push choice_msg
+    call _printf
+    add esp, 4
+
+    push choice
+    push fmt_int
+    call _scanf
+    add esp, 8
+
+    ; Validation
+    cmp eax, 1
+    jne .edit_menu_error
+    call _getchar
+    cmp eax, 10
+    jne .edit_menu_error
+
+    mov eax, [choice]
+    cmp eax, 1
+    jl .edit_range_error
+    cmp eax, 4
+    jg .edit_range_error
+
+    cmp eax, 1
+    je .do_edit_name
+    cmp eax, 2
+    je .do_edit_qty
+    cmp eax, 3
+    je .do_edit_price
+    cmp eax, 4
+    je main_menu ; Done editing
+
+.edit_menu_error:
+    call flush_buffer
+    push error_not_number
+    call _printf
+    add esp, 4
+    jmp .edit_menu_loop
+
+.edit_range_error:
+    push error_edit_range
+    call _printf
+    add esp, 4
+    jmp .edit_menu_loop
+
+; --- OPTION 1: EDIT NAME ---
+.do_edit_name:
     push edit_prompt_new_name
     call _printf
     add esp, 4
@@ -771,16 +833,54 @@ do_edit_product:
     call _scanf
     add esp, 8
     
-    ; Validation for Edit Name
     call _getchar
     cmp eax, 10
-    jne .edit_name_has_garbage
+    jne .edit_name_junk
 
     call check_name_alpha
     cmp eax, 0
-    je .edit_bad_name_type
+    je .edit_name_digits
 
-.edit_step3:
+    ; Check for duplicates (new name vs existing list)
+    call check_duplicate_func
+    cmp eax, 1
+    je .edit_duplicate_error
+
+    ; Update Name
+    mov ebx, [current_index]
+    mov edi, product_names
+    mov eax, ebx
+    imul eax, product_length
+    add edi, eax
+    mov esi, temp_name
+    call strcpy_manual
+
+    push msg_updated
+    call _printf
+    add esp, 4
+    jmp .edit_menu_loop
+
+.edit_name_junk:
+    call flush_buffer
+    push error_name_invalid
+    call _printf
+    add esp, 4
+    jmp .do_edit_name
+
+.edit_name_digits:
+    push error_name_invalid
+    call _printf
+    add esp, 4
+    jmp .do_edit_name
+
+.edit_duplicate_error:
+    push msg_duplicate
+    call _printf
+    add esp, 4
+    jmp .do_edit_name
+
+; --- OPTION 2: EDIT QUANTITY ---
+.do_edit_qty:
     push edit_prompt_new_qty
     call _printf
     add esp, 4
@@ -790,18 +890,43 @@ do_edit_product:
     add esp, 8
     
     cmp eax, 1
-    jne .edit_bad_qty_type
+    jne .edit_qty_error
     call _getchar
     cmp eax, 10
-    jne .edit_bad_qty_type
+    jne .edit_qty_error
 
     mov eax, [temp_qty]
     cmp eax, 0
-    jl .edit_range_qty
+    jl .edit_qty_range
     cmp eax, 99
-    jg .edit_range_qty
+    jg .edit_qty_range
 
-.edit_step4:
+    ; Update Qty
+    mov ebx, [current_index]
+    lea edi, [quantities + ebx * 4]
+    mov eax, [temp_qty]
+    mov [edi], eax
+
+    push msg_updated
+    call _printf
+    add esp, 4
+    jmp .edit_menu_loop
+
+.edit_qty_error:
+    call flush_buffer
+    push error_not_number
+    call _printf
+    add esp, 4
+    jmp .do_edit_qty
+
+.edit_qty_range:
+    push error_qty_range
+    call _printf
+    add esp, 4
+    jmp .do_edit_qty
+
+; --- OPTION 3: EDIT PRICE ---
+.do_edit_price:
     push edit_prompt_new_price
     call _printf
     add esp, 4
@@ -811,29 +936,17 @@ do_edit_product:
     add esp, 8
 
     cmp eax, 1
-    jne .edit_bad_price_type
+    jne .edit_price_error
     call _getchar
     cmp eax, 10
-    jne .edit_bad_price_type
+    jne .edit_price_error
 
     mov eax, [temp_price]
     cmp eax, 0
-    jl .edit_range_price
+    jl .edit_price_range
 
-    ; Save Updates
+    ; Update Price
     mov ebx, [current_index]
-    
-    mov edi, product_names
-    mov eax, ebx
-    imul eax, product_length
-    add edi, eax
-    mov esi, temp_name
-    call strcpy_manual
-
-    lea edi, [quantities + ebx * 4]
-    mov eax, [temp_qty]
-    mov [edi], eax
-
     lea edi, [prices + ebx * 4]
     mov eax, [temp_price]
     mov [edi], eax
@@ -841,7 +954,20 @@ do_edit_product:
     push msg_updated
     call _printf
     add esp, 4
-    jmp main_menu
+    jmp .edit_menu_loop
+
+.edit_price_error:
+    call flush_buffer
+    push error_not_number
+    call _printf
+    add esp, 4
+    jmp .do_edit_price
+
+.edit_price_range:
+    push error_price_neg
+    call _printf
+    add esp, 4
+    jmp .do_edit_price
 
 .edit_not_found:
     push msg_not_found
@@ -854,45 +980,6 @@ do_edit_product:
     call _printf
     add esp, 4
     jmp main_menu
-
-.edit_name_has_garbage:
-    call flush_buffer
-    push error_name_invalid
-    call _printf
-    add esp, 4
-    jmp .edit_step2
-
-.edit_bad_name_type:
-    push error_name_invalid
-    call _printf
-    add esp, 4
-    jmp .edit_step2
-
-.edit_bad_qty_type:
-    call flush_buffer
-    push error_not_number
-    call _printf
-    add esp, 4
-    jmp .edit_step3
-
-.edit_range_qty:
-    push error_qty_range
-    call _printf
-    add esp, 4
-    jmp .edit_step3
-
-.edit_bad_price_type:
-    call flush_buffer
-    push error_not_number
-    call _printf
-    add esp, 4
-    jmp .edit_step4
-
-.edit_range_price:
-    push error_price_neg
-    call _printf
-    add esp, 4
-    jmp .edit_step4
 
 ; ==========================================================
 ; HELPERS
@@ -1040,7 +1127,10 @@ get_product_index:
     mov edi, temp_name 
     push ecx
     push ebx
-    call strcmp_manual 
+    
+    ; *** CHANGED TO CASE INSENSITIVE ***
+    call stricmp_manual 
+    
     pop ebx
     pop ecx
     cmp eax, 1 
@@ -1074,12 +1164,29 @@ strcpy_manual:
     jne .copy_char
     ret
 
-strcmp_manual:
+; *** STRING COMPARE (CASE INSENSITIVE) ***
+stricmp_manual:
     push esi
     push edi
 .cmp_loop:
     mov al, [esi]
     mov bl, [edi]
+    
+    ; Convert AL to lower (if A-Z)
+    cmp al, 'A'
+    jl .check_bl
+    cmp al, 'Z'
+    jg .check_bl
+    add al, 32
+.check_bl:
+    ; Convert BL to lower (if A-Z)
+    cmp bl, 'A'
+    jl .compare_now
+    cmp bl, 'Z'
+    jg .compare_now
+    add bl, 32
+    
+.compare_now:
     cmp al, bl
     jne .cmp_diff
     cmp al, 0
@@ -1102,5 +1209,4 @@ exit_program:
     push exit_msg
     call _printf
     add esp, 4
-
     ret
