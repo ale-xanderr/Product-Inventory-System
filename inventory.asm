@@ -40,7 +40,7 @@ section .data
         "[1] Edit Name", 10, \
         "[2] Edit Quantity", 10, \
         "[3] Edit Price", 10, \
-        "[4] Back (Select Another Product)", 10, \
+        "[4] Select Another Product", 10, \
         "[5] Return to Main Menu", 10, 0
 
     ; ================= MESSAGES & PROMPTS =================
